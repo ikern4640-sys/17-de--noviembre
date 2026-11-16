@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>17 de noviembre — El fin</title>
+<style>
+  *{box-sizing:border-box} html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#070914;color:white;font-family:system-ui,Arial}
+  #game{position:fixed;inset:0}
+  #hud{position:fixed;inset:0;pointer-events:none;display:flex;flex-direction:column;align-items:center;padding:18px 14px}
+  h1{margin:0;text-align:center;font-size:clamp(28px,6vw,58px);letter-spacing:3px;text-shadow:0 0 18px #ff315d,0 0 35px #7b42ff}
+  #sub{margin-top:4px;color:#d8d9ff;text-align:center}
+  #count{margin-top:12px;padding:8px 18px;border:1px solid #ffffff55;border-radius:14px;background:#080b20bb;font-size:clamp(18px,3vw,28px);font-weight:800;box-shadow:0 0 24px #6248ff55}
+  #followers{margin-top:9px;padding:7px 14px;border-radius:999px;background:linear-gradient(90deg,#6b42d8cc,#e83e8ccc);border:1px solid #ffffff66;font-weight:900;letter-spacing:1px;box-shadow:0 0 22px #b44cff66}
+  #hint{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);padding:9px 13px;border-radius:12px;background:#080b20dd;color:#e6e7ff;font-size:13px;text-align:center;width:max-content;max-width:94vw}
+  #thanks{display:none;position:absolute;inset:0;align-items:center;justify-content:center;text-align:center;font-size:clamp(34px,8vw,84px);font-weight:1000;letter-spacing:2px;color:#fff;text-shadow:0 0 12px #ff4b83,0 0 35px #8d55ff;pointer-events:none;animation:pulse 1.4s infinite alternate}
+  @keyframes pulse{to{transform:scale(1.05);filter:brightness(1.4)}}
+  #mobile{position:absolute;bottom:70px;left:14px;display:grid;grid-template-columns:repeat(3,46px);gap:5px;pointer-events:auto}
+  #mobile button{height:42px;border:1px solid #ffffff55;border-radius:10px;background:#151a36cc;color:white;font-size:18px}
+  #jump{position:absolute;bottom:82px;right:18px;pointer-events:auto;width:68px;height:58px;border:1px solid #ffffff66;border-radius:16px;background:#5839aacc;color:white;font-weight:bold}
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div id="hud">
+  <h1>17 DE NOVIEMBRE: EL FIN</h1>
+  <div id="sub">Un último viaje… gracias por estar aquí.</div>
+  <div id="count">Cargando cuenta regresiva…</div>
+  <div id="followers">★ 1,048 SEGUIDORES</div>
+  <div id="thanks">¡¡¡GRACIAS POR TODO!!!</div>
+  <div id="mobile">
+    <span></span><button data-key="ArrowUp">▲</button><span></span>
+    <button data-key="ArrowLeft">◀</button><button data-key="ArrowDown">▼</button><button data-key="ArrowRight">▶</button>
+  </div>
+  <button id="jump">SALTAR</button>
+  <div id="hint">Moverse: WASD o flechas · Saltar: ESPACIO · Girar la cámara: arrastra la pantalla</div>
+</div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+const scene=new THREE.Scene(); scene.background=new THREE.Color(0x080b1c); scene.fog=new THREE.Fog(0x080b1c,18,65);
+const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,.1,120);
+const renderer=new THREE.WebGLRenderer({antialias:true}); renderer.setSize(innerWidth,innerHeight); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.shadowMap.enabled=true; document.querySelector('#game').appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xb9c7ff,0x25203c,2));
+const light=new THREE.DirectionalLight(0xffffff,2.2); light.position.set(-5,12,7); light.castShadow=true; scene.add(light);
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(150,150),new THREE.MeshStandardMaterial({color:0x171a35,roughness:.9})); floor.rotation.x=-Math.PI/2; floor.position.y=-.05; floor.receiveShadow=true; scene.add(floor);
+const grid=new THREE.GridHelper(100,100,0x4c4e9b,0x292d55); grid.position.y=.005; scene.add(grid);
+// Camino de obby: plataformas, bloques de salto, arcos y meta.
+function platform(x,y,z,w,h,d,color=0x6248b8){
+ const p=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(color));
+ p.position.set(x,y,z);p.castShadow=true;p.receiveShadow=true;scene.add(p);return p;
+}
+for(let i=0;i<12;i++){
+ const z=1-i*3.2, x=Math.sin(i*.85)*2.8, y=.35+(i%3)*.22;
+ platform(x,y,z,3.4,.45,2.4,[0x6046b8,0x236f9f,0x9b3d87,0x287b70][i%4]);
+}
+for(let i=0;i<8;i++){
+ const z=-4-i*4.2, x=Math.cos(i*1.1)*5;
+ platform(x,.3,z,1.1,1.1,1.1,0xf05c79);
+}
+for(let side of [-1,1]){
+ platform(side*8,1,-15,1,2,34,0x252b56);
+ for(let j=0;j<7;j++) platform(side*11,.45+j*.25,-3-j*4,2,.35,2,0x3a4279);
+}
+const finishRing=new THREE.Mesh(new THREE.TorusGeometry(2, .18, 12, 48),mat(0xffd65a));
+finishRing.position.set(0,2,-43);scene.add(finishRing);
+const finishPost1=platform(-2,1,-43,.25,2,.25,0xffd65a);
+const finishPost2=platform(2,1,-43,.25,2,.25,0xffd65a);
+for(let i=0;i<90;i++){let s=new THREE.Mesh(new THREE.SphereGeometry(.045,8,8),new THREE.MeshBasicMaterial({color:i%2?0x8d79ff:0xff77b7}));s.position.set((Math.random()-.5)*70,Math.random()*18-1,(Math.random()-.5)*70);scene.add(s)}
+function mat(c){return new THREE.MeshStandardMaterial({color:c,roughness:.55})}
+function makeAvatar(){
+ const g=new THREE.Group();
+ const body=new THREE.Mesh(new THREE.CapsuleGeometry(.42,.8,5,10),mat(0x35a8ff)); body.position.y=1.05;body.castShadow=true;g.add(body);
+ const head=new THREE.Mesh(new THREE.SphereGeometry(.34,16,12),mat(0xffc99d));head.position.y=1.88;head.castShadow=true;g.add(head);
+ const hair=new THREE.Mesh(new THREE.SphereGeometry(.35,12,8,0,Math.PI*2,0,Math.PI/2),mat(0x242033));hair.position.y=2.04;g.add(hair);
+ const eyeMat=new THREE.MeshBasicMaterial({color:0x111827});
+ for(const x of [-.12,.12]){let e=new THREE.Mesh(new THREE.SphereGeometry(.035,8,8),eyeMat);e.position.set(x,1.91,.3);g.add(e)}
+ for(const x of [-.19,.19]){let leg=new THREE.Mesh(new THREE.BoxGeometry(.16,.48,.18),mat(0x202b55));leg.position.set(x,.25,0);leg.castShadow=true;g.add(leg)}
+ return g;
+}
+// Decoración lateral del mapa para que el escenario no se vea vacío.
+for(let i=0;i<18;i++){
+ const z=8-i*3.2;
+ for(const side of [-1,1]){
+  const pillar=new THREE.Mesh(new THREE.CylinderGeometry(.25,.42,2.8,8),mat(i%2?0x353d79:0x503878));
+  pillar.position.set(side*(9+Math.sin(i)*1.5),1.35,z);pillar.castShadow=true;scene.add(pillar);
+  const orb=new THREE.Mesh(new THREE.SphereGeometry(.38,12,10),new THREE.MeshBasicMaterial({color:i%2?0x65dfff:0xff69bb}));
+  orb.position.set(side*(9+Math.sin(i)*1.5),3,z);scene.add(orb);
+ }
+}
+const player=makeAvatar();scene.add(player);player.position.set(0,0,3);
+let keys={},vy=0,onGround=true,camYaw=0,drag=false,lastX=0;
+addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault()});
+addEventListener('keyup',e=>keys[e.code]=false);
+document.querySelectorAll('[data-key]').forEach(b=>{const k=b.dataset.key;b.addEventListener('pointerdown',e=>{keys[k]=true;b.setPointerCapture(e.pointerId)});['pointerup','pointercancel','lostpointercapture'].forEach(ev=>b.addEventListener(ev,()=>keys[k]=false))});
+function jump(){if(onGround){vy=8.2;onGround=false}} document.querySelector('#jump').addEventListener('click',jump);
+addEventListener('keydown',e=>{if(e.code==='Space')jump()});
+renderer.domElement.addEventListener('pointerdown',e=>{drag=true;lastX=e.clientX});
+addEventListener('pointerup',()=>drag=false);
+addEventListener('pointermove',e=>{if(drag){camYaw-=(e.clientX-lastX)*.006;lastX=e.clientX}});
+function makeFallingCharacter(type){
+ const g=new THREE.Group(); let color=type==='Among Us'?0xe94343:type==='Mordecai'?0x3c9de0:type==='Tails'?0xff9d24:[0x9b6cff,0x4ed6a1,0xffd34e,0xff75b5][Math.floor(Math.random()*4)];
+ if(type==='Among Us'){let b=new THREE.Mesh(new THREE.CapsuleGeometry(.38,.45,4,8),mat(color));b.position.y=.55;g.add(b);let visor=new THREE.Mesh(new THREE.BoxGeometry(.43,.2,.12),mat(0x9ceaff));visor.position.set(0,.72,.32);g.add(visor);let pack=new THREE.Mesh(new THREE.BoxGeometry(.18,.42,.25),mat(0x9c202d));pack.position.set(-.42,.52,0);g.add(pack)}
+ else if(type==='Mordecai'){let b=new THREE.Mesh(new THREE.CapsuleGeometry(.25,.75,4,8),mat(color));b.position.y=.65;g.add(b);let h=new THREE.Mesh(new THREE.SphereGeometry(.3,12,10),mat(0x2380bd));h.scale.set(1,1.35,.8);h.position.y=1.35;g.add(h);for(let x of [-.13,.13]){let beak=new THREE.Mesh(new THREE.ConeGeometry(.08,.25,6),mat(0xffb52e));beak.rotation.x=Math.PI/2;beak.position.set(x,1.32,.27);g.add(beak)}}
+ else if(type==='Tails'){let b=new THREE.Mesh(new THREE.SphereGeometry(.34,12,10),mat(color));b.position.y=.7;g.add(b);let h=new THREE.Mesh(new THREE.SphereGeometry(.28,12,10),mat(0xffd3a0));h.position.y=1.25;g.add(h);for(let x of [-.18,.18]){let ear=new THREE.Mesh(new THREE.ConeGeometry(.09,.4,6),mat(color));ear.position.set(x,1.58,0);g.add(ear)}let tail=new THREE.Mesh(new THREE.ConeGeometry(.16,.8,8),mat(color));tail.rotation.z=-1.1;tail.position.set(.4,.45,-.1);g.add(tail)}
+ else {let b=new THREE.Mesh(new THREE.SphereGeometry(.38,12,10),mat(color));b.position.y=.55;g.add(b);let h=new THREE.Mesh(new THREE.SphereGeometry(.24,12,10),mat(0xffd1aa));h.position.y=1.08;g.add(h)}
+ g.position.set((Math.random()-.5)*22,12+Math.random()*12,(Math.random()-.5)*18-2);g.rotation.set(Math.random(),Math.random()*6,Math.random());g.userData.v=.04+Math.random()*.06;scene.add(g);fallers.push(g);
+}
+let fallers=[],ended=false;
+function finish(){if(ended)return;ended=true;document.querySelector('#thanks').style.display='flex';document.querySelector('#sub').textContent='El recuerdo de esta aventura se queda con nosotros.';let types=['Among Us','Mordecai','Tails'];for(let i=0;i<75;i++)makeFallingCharacter(types[i%3]);}
+const target=new Date(2026,10,17,0,0,0);
+function countdown(){let ms=target-Date.now();if(ms<=0){document.querySelector('#count').textContent='00 : 00 : 00 : 00';finish();return}
+let d=Math.floor(ms/86400000),h=Math.floor(ms%86400000/3600000),m=Math.floor(ms%3600000/60000),s=Math.floor(ms%60000/1000);
+document.querySelector('#count').textContent=`${String(d).padStart(2,'0')} DÍAS : ${String(h).padStart(2,'0')} H : ${String(m).padStart(2,'0')} M : ${String(s).padStart(2,'0')} S`;
+}
+countdown();setInterval(countdown,250);
+let clock=new THREE.Clock();
+function animate(){requestAnimationFrame(animate);let dt=Math.min(clock.getDelta(),.04);
+let f=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0),s=((keys.KeyD||keys.ArrowRight)?1:0)-((keys.KeyA||keys.ArrowLeft)?1:0);
+let dir=new THREE.Vector3(s,0,-f);if(dir.lengthSq()>0){dir.normalize().applyAxisAngle(new THREE.Vector3(0,1,0),camYaw);player.position.addScaledVector(dir,5*dt);player.rotation.y=Math.atan2(dir.x,dir.z)}
+vy-=19*dt;player.position.y+=vy*dt;if(player.position.y<=0){player.position.y=0;vy=0;onGround=true}
+player.position.x=THREE.MathUtils.clamp(player.position.x,-14,14);player.position.z=THREE.MathUtils.clamp(player.position.z,-49,12);
+const offset=new THREE.Vector3(Math.sin(camYaw)*8,4.2,Math.cos(camYaw)*8);let desired=player.position.clone().add(offset);camera.position.lerp(desired,1-Math.pow(.001,dt));camera.lookAt(player.position.x,1.1,player.position.z);
+for(const g of fallers){g.position.y-=g.userData.v*60*dt;g.rotation.x+=dt*.7;g.rotation.z+=dt*.4;if(g.position.y<.8){g.position.y=.8;g.userData.v=0}}
+renderer.render(scene,camera)}
+animate();
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+</script>
+</body></html>
